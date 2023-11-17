@@ -8,33 +8,33 @@ except ImportError:
     print("jsonformatter must be installed for tests. aborting")
     exit(1)
 
-from context_logger import ContextLogger
+from extralog import ExtraLog
 
 
 def test_init_accepts_logger_or_name():
     logger_name = "foo"
     standard_logger = logging.getLogger(logger_name)
-    ctx_logger = ContextLogger(standard_logger)
-    assert ctx_logger.logger is standard_logger
-    assert ContextLogger(logger_name).logger is standard_logger
+    extralog = ExtraLog(standard_logger)
+    assert extralog.logger is standard_logger
+    assert ExtraLog(logger_name).logger is standard_logger
 
 
 def test_update_extra_persists_across_multiple_calls(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
-        ctx_logger.info("first log", extra=dict(log="first"))
-        ctx_logger.info("second log should not have any extra")
-        ctx_logger.update_extra(updated="extra").info("third log should have 'updated':'extra'")
-        ctx_logger.info("fourth log also should have 'updated':'extra'")
-        ctx_logger.info("fifth log should have 'updated':'extra' and 'log':'fifth'", extra=dict(log="fifth"))
-        ctx_logger.info("sixth log should only have 'updated':'extra'")
-        ctx_logger.info(
+        extralog = build_extralog_with_stream(current_test_name, stream)
+        extralog.info("first log", extra=dict(log="first"))
+        extralog.info("second log should not have any extra")
+        extralog.update_extra(updated="extra").info("third log should have 'updated':'extra'")
+        extralog.info("fourth log also should have 'updated':'extra'")
+        extralog.info("fifth log should have 'updated':'extra' and 'log':'fifth'", extra=dict(log="fifth"))
+        extralog.info("sixth log should only have 'updated':'extra'")
+        extralog.info(
             "seventh log should only have 'updated':'extra implicitly'", extra=dict(updated="extra implicitly")
         )
-        ctx_logger.info("eighth log should only have 'updated':'extra implicitly'")
-        ctx_logger.update_extra(updated="extra explicitly", have='a cookie')
-        ctx_logger.info("ninth log should have 'updated':'extra explicitly' and 'have':'a cookie'")
-        ctx_logger.update_extra(updated="extra last time", have='a mars bar').info(
+        extralog.info("eighth log should only have 'updated':'extra implicitly'")
+        extralog.update_extra(updated="extra explicitly", have='a cookie')
+        extralog.info("ninth log should have 'updated':'extra explicitly' and 'have':'a cookie'")
+        extralog.update_extra(updated="extra last time", have='a mars bar').info(
             "tenth log should have 'updated':'extra last time', 'have':'a mars bar' and 'test_is':'over'",
             extra=dict(test_is='over'),
         )
@@ -58,13 +58,13 @@ def test_update_extra_persists_across_multiple_calls(current_test_name):
 
 def test_delete_extra(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
-        ctx_logger.update_extra(foo="bar", baz="qux").info("first log should have 'foo':'bar' and 'baz':'qux'")
-        ctx_logger.delete_extra("foo").info("second log should have 'baz':'qux'")
-        ctx_logger.delete_extra("baz")
-        ctx_logger.info("third log should not have any extra")
-        ctx_logger.delete_extra("made up key, but that's fine")
-        ctx_logger.info("fourth log should not have any extra")
+        extralog = build_extralog_with_stream(current_test_name, stream)
+        extralog.update_extra(foo="bar", baz="qux").info("first log should have 'foo':'bar' and 'baz':'qux'")
+        extralog.delete_extra("foo").info("second log should have 'baz':'qux'")
+        extralog.delete_extra("baz")
+        extralog.info("third log should not have any extra")
+        extralog.delete_extra("made up key, but that's fine")
+        extralog.info("fourth log should not have any extra")
 
         stream_value = stream.getvalue()
 
@@ -77,18 +77,18 @@ def test_delete_extra(current_test_name):
 
 def test_logs_extra_when_passed_as_kwarg(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
-        ctx_logger.info("first log", log="first")
-        ctx_logger.info("second log should not have any extra")
-        ctx_logger.update_extra(updated="extra").info("third log should have 'updated':'extra'")
-        ctx_logger.info("fourth log also should have 'updated':'extra'")
-        ctx_logger.info("fifth log should have 'updated':'extra' and 'log':'fifth'", log="fifth")
-        ctx_logger.info("sixth log should only have 'updated':'extra'")
-        ctx_logger.info("seventh log should only have 'updated':'extra implicitly'", updated="extra implicitly")
-        ctx_logger.info("eighth log should only have 'updated':'extra implicitly'")
-        ctx_logger.update_extra(updated="extra explicitly", have='a cookie')
-        ctx_logger.info("ninth log should have 'updated':'extra explicitly' and 'have':'a cookie'")
-        ctx_logger.update_extra(updated="extra last time", have='a mars bar').info(
+        extralog = build_extralog_with_stream(current_test_name, stream)
+        extralog.info("first log", log="first")
+        extralog.info("second log should not have any extra")
+        extralog.update_extra(updated="extra").info("third log should have 'updated':'extra'")
+        extralog.info("fourth log also should have 'updated':'extra'")
+        extralog.info("fifth log should have 'updated':'extra' and 'log':'fifth'", log="fifth")
+        extralog.info("sixth log should only have 'updated':'extra'")
+        extralog.info("seventh log should only have 'updated':'extra implicitly'", updated="extra implicitly")
+        extralog.info("eighth log should only have 'updated':'extra implicitly'")
+        extralog.update_extra(updated="extra explicitly", have='a cookie')
+        extralog.info("ninth log should have 'updated':'extra explicitly' and 'have':'a cookie'")
+        extralog.update_extra(updated="extra last time", have='a mars bar').info(
             "tenth log should have 'updated':'extra last time', 'have':'a mars bar', 'test_is':'over' and 'good':'bye'",
             test_is='over',
             extra=dict(good='bye'),
@@ -113,13 +113,13 @@ def test_logs_extra_when_passed_as_kwarg(current_test_name):
 
 def test_standard_log_function_kwargs_work(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(
+        extralog = build_extralog_with_stream(
             current_test_name, stream, fmt=dict(message="message", funcName="funcName")
         )
         try:
             1 / 0
         except ZeroDivisionError:
-            ctx_logger.update_extra(foo="bar").info(
+            extralog.update_extra(foo="bar").info(
                 "", baz="qux", extra=dict(hi="bye"), exc_info=True, stack_info=True, stacklevel=4
             )
         stream_value = stream.getvalue()
@@ -134,30 +134,30 @@ def test_standard_log_function_kwargs_work(current_test_name):
 
 def test_scope(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
-        ctx_logger.update_extra(hello="world")
-        with ctx_logger.scope(foo="bar"):
-            ctx_logger.info("first log should have 'foo':'bar' and 'hello':'world'")
-        ctx_logger.info("second log should have 'hello':'world'")
-        with ctx_logger.scope(first="scope"):
-            with ctx_logger.scope(second="scope"):
-                ctx_logger.info("third log should have 'first':'scope', 'second':'scope' and 'hello':'world'")
-                ctx_logger.info(
+        extralog = build_extralog_with_stream(current_test_name, stream)
+        extralog.update_extra(hello="world")
+        with extralog.scope(foo="bar"):
+            extralog.info("first log should have 'foo':'bar' and 'hello':'world'")
+        extralog.info("second log should have 'hello':'world'")
+        with extralog.scope(first="scope"):
+            with extralog.scope(second="scope"):
+                extralog.info("third log should have 'first':'scope', 'second':'scope' and 'hello':'world'")
+                extralog.info(
                     "fourth log should have 'first':'scope', 'second':'changed' and 'hello':'world'", second='changed'
                 )
-                ctx_logger.info("fifth log should have 'first':'scope', 'second':'changed' and 'hello':'world'")
-                ctx_logger.info(
+                extralog.info("fifth log should have 'first':'scope', 'second':'changed' and 'hello':'world'")
+                extralog.info(
                     "sixth log should have 'first':'changed from inner', 'second':'changed' and 'hello':'world'",
                     first='changed from inner',
                 )
-                ctx_logger.update_extra(should='persist outside of scope')
-            ctx_logger.info(
+                extralog.update_extra(should='persist outside of scope')
+            extralog.info(
                 "seventh log should have 'first':'changed from inner', 'hello':'world' and 'should':'persist outside of scope'"
             )
-        ctx_logger.info("eigth log should have 'hello':'world' and 'should':'persist outside of scope'")
-        with ctx_logger.scope(deleting="manually"):
-            ctx_logger.delete_extra("deleting")
-        ctx_logger.info("ninth log should not have 'deleting':'manually'")
+        extralog.info("eigth log should have 'hello':'world' and 'should':'persist outside of scope'")
+        with extralog.scope(deleting="manually"):
+            extralog.delete_extra("deleting")
+        extralog.info("ninth log should not have 'deleting':'manually'")
         stream_value = stream.getvalue()
     first, second, third, fourth, fifth, sixth, seventh, eigth, ninth = [
         json.loads(line) for line in stream_value.splitlines()
@@ -175,13 +175,13 @@ def test_scope(current_test_name):
 
 def test_start_scope_by_calling_logger_instance(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
-        ctx_logger.update_extra(hello="world")
-        with ctx_logger(foo="bar") as logger:
+        extralog = build_extralog_with_stream(current_test_name, stream)
+        extralog.update_extra(hello="world")
+        with extralog(foo="bar") as logger:
             logger.info("first log should have 'foo':'bar' and 'hello':'world'")
-            with ctx_logger(baz="qux"):
+            with extralog(baz="qux"):
                 logger.info("second log should have 'foo':'bar', 'baz':'qux' and 'hello':'world'")
-        ctx_logger.info("third log should have 'hello':'world'")
+        extralog.info("third log should have 'hello':'world'")
         stream_value = stream.getvalue()
     first, second, third = [json.loads(line) for line in stream_value.splitlines()]
     assert first == dict(foo='bar', hello='world')
@@ -191,23 +191,23 @@ def test_start_scope_by_calling_logger_instance(current_test_name):
 
 def test_scope_decorator(current_test_name):
     with io.StringIO() as stream:
-        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
-        @ctx_logger.scope(foo="bar")
+        extralog = build_extralog_with_stream(current_test_name, stream)
+        @extralog.scope(foo="bar")
         def first(logger):
             logger.info("first log should have 'foo':'bar' and 'hello':'world'")
             second()
-        @ctx_logger.scope(baz="qux")
+        @extralog.scope(baz="qux")
         def second(logger):
             logger.update_extra(hello="world")
             logger.info("second log should have 'foo':'bar', 'baz':'qux' and 'hello':'world'")
             third()
 
-        @ctx_logger.scope(hello="earth")
+        @extralog.scope(hello="earth")
         def third(logger):
             logger.info("third log should have 'foo':'bar', 'baz':'qux' and 'hello':'earth'")
 
         first()
-        ctx_logger.info("fourth log should not have any extra")
+        extralog.info("fourth log should not have any extra")
         stream_value = stream.getvalue()
     first, second, third, fourth = [json.loads(line) for line in stream_value.splitlines()]
     assert first == dict(foo='bar', )
@@ -216,7 +216,7 @@ def test_scope_decorator(current_test_name):
     assert fourth == dict()
 
 
-def build_ctx_logger_with_stream(logger_name, stream, *, fmt: dict = None):
+def build_extralog_with_stream(logger_name, stream, *, fmt: dict = None):
     wrapped_logger = logging.getLogger(logger_name)
     wrapped_logger.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler(stream)
@@ -224,5 +224,5 @@ def build_ctx_logger_with_stream(logger_name, stream, *, fmt: dict = None):
     formatter = JsonFormatter(fmt=json.dumps(fmt), mix_extra=True)
     stream_handler.setFormatter(formatter)
     wrapped_logger.addHandler(stream_handler)
-    ctx_logger = ContextLogger(wrapped_logger)
-    return ctx_logger
+    extralog = ExtraLog(wrapped_logger)
+    return extralog

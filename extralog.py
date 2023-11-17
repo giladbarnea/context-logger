@@ -48,7 +48,7 @@ class _ContextManagerDecorator:
         return wrapper
 
 
-class ContextLogger(logging.LoggerAdapter):
+class ExtraLog(logging.LoggerAdapter):
     extra: dict
 
     def __init__(self, logger_or_name=Union[logging.Logger, str], extra: dict = None):
@@ -87,7 +87,7 @@ class ContextLogger(logging.LoggerAdapter):
         """
         Persist `extra` across logging calls.
 
-        >>> log = ContextLogger("example")
+        >>> log = ExtraLog("example")
         >>> log.update_extra(chat_id="...").info("hello")
         """
         if not self.extra:
@@ -106,7 +106,7 @@ class ContextLogger(logging.LoggerAdapter):
         """
         Persist `extra` only in a given scope.
 
-        >>> log = ContextLogger("example")
+        >>> log = ExtraLog("example")
         >>> with log.scope(doing="something"):
         ...     something()
         ...     log.info("done")
@@ -130,7 +130,7 @@ class ContextLogger(logging.LoggerAdapter):
         """
         Shortcut for `logger.scope`.
 
-        >>> log = ContextLogger("example")
+        >>> log = ExtraLog("example")
         >>> with log(doing="something"):
         ...     something()
         ...     log.info("done")

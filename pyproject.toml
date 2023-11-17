@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "context-logger"
+name = "extralog"
 version = "0.1.0"
 description = ""
 authors = ["'Gilad Barnea' <giladbrn@gmail.com>"]
