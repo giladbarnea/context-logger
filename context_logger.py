@@ -6,11 +6,6 @@ from typing_extensions import Self
 
 
 class ContextLogger(logging.LoggerAdapter):
-    """
-    Persists `extra` across logging calls.
-    `extra` can be specified as a kwarg to any logging call, e.g. `logger.info("message", chat_id=123)`
-    """
-
     extra: dict
 
     def __init__(self, logger_or_name=Union[logging.Logger, str], extra: dict = None):
@@ -22,11 +17,19 @@ class ContextLogger(logging.LoggerAdapter):
         super().__init__(logger, extra)
 
     def process(self, msg, kwargs):
-        """Overwrites and persists new values to existing keys in self.extra."""
+        """
+        Existing keys in `self.extra` are updated and persisted.
+        Keys not previously in `self.extra` are included only for the duration of this call.
+
+        The following are treated the same:
+        >>> log.info("message", request_id=123)
+        >>> log.info("message", extra={'request_id' : 123})
+        """
+        log_function_arg_names = ("exc_info", "stack_info", "stacklevel")
         log_function_kwargs = {}
-        for log_function_kwarg in ("exc_info", "stack_info", "stacklevel"):
-            if log_function_kwarg in kwargs:
-                log_function_kwargs[log_function_kwarg] = kwargs.pop(log_function_kwarg)
+        for log_function_arg_name in log_function_arg_names:
+            if log_function_arg_name in kwargs:
+                log_function_kwargs[log_function_arg_name] = kwargs.pop(log_function_arg_name)
 
         explicit_extra = kwargs.pop('extra', {})
         new_extra = kwargs | explicit_extra
@@ -39,10 +42,12 @@ class ContextLogger(logging.LoggerAdapter):
 
     def update_extra(self, **kwargs) -> Self:
         """
-        >>> logger = ContextLogger("example")
-        >>> logger.update_extra(chat_id="...").info("hello")
+        Persist `extra` across logging calls.
+
+        >>> log = ContextLogger("example")
+        >>> log.update_extra(chat_id="...").info("hello")
         """
-        if self.extra is None:
+        if not self.extra:
             self.extra = kwargs
         else:
             self.extra.update(kwargs)
@@ -58,10 +63,10 @@ class ContextLogger(logging.LoggerAdapter):
         """
         Persist `extra` only in a given scope.
 
-        >>> logger = ContextLogger("example")
-        >>> with logger.scope(doing="something"):
+        >>> log = ContextLogger("example")
+        >>> with log.scope(doing="something"):
         ...     something()
-        ...     logger.info("done")
+        ...     log.info("done")
         { 'message': 'done', 'doing': 'something' }
         """
         self.update_extra(**kwargs)
@@ -70,4 +75,14 @@ class ContextLogger(logging.LoggerAdapter):
         finally:
             self.delete_extra(*kwargs.keys())
 
-    __call__ = scope
+    def __call__(self, **kwargs):
+        """
+        Shortcut for `logger.scope`.
+
+        >>> log = ContextLogger("example")
+        >>> with log(doing="something"):
+        ...     something()
+        ...     log.info("done")
+        { 'message': 'done', 'doing': 'something' }
+        """
+        return self.scope(**kwargs)
