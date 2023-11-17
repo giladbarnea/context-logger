@@ -16,7 +16,6 @@ def test_init_accepts_logger_or_name():
     standard_logger = logging.getLogger(logger_name)
     ctx_logger = ContextLogger(standard_logger)
     assert ctx_logger.logger is standard_logger
-    assert ContextLogger(standard_logger).logger is standard_logger
     assert ContextLogger(logger_name).logger is standard_logger
 
 
@@ -156,8 +155,11 @@ def test_scope(current_test_name):
                 "seventh log should have 'first':'changed from inner', 'hello':'world' and 'should':'persist outside of scope'"
             )
         ctx_logger.info("eigth log should have 'hello':'world' and 'should':'persist outside of scope'")
+        with ctx_logger.scope(deleting="manually"):
+            ctx_logger.delete_extra("deleting")
+        ctx_logger.info("ninth log should not have 'deleting':'manually'")
         stream_value = stream.getvalue()
-    first, second, third, fourth, fifth, sixth, seventh, eigth = [
+    first, second, third, fourth, fifth, sixth, seventh, eigth, ninth = [
         json.loads(line) for line in stream_value.splitlines()
     ]
     assert first == dict(foo='bar', hello='world')
@@ -168,6 +170,7 @@ def test_scope(current_test_name):
     assert sixth == dict(first='changed from inner', second='changed', hello='world')
     assert seventh == dict(first='changed from inner', hello='world', should='persist outside of scope')
     assert eigth == dict(hello='world', should='persist outside of scope')
+    assert ninth == dict(hello='world', should='persist outside of scope')
 
 
 def test_start_scope_by_calling_logger_instance(current_test_name):
@@ -176,11 +179,14 @@ def test_start_scope_by_calling_logger_instance(current_test_name):
         ctx_logger.update_extra(hello="world")
         with ctx_logger(foo="bar") as logger:
             logger.info("first log should have 'foo':'bar' and 'hello':'world'")
-        ctx_logger.info("second log should have 'hello':'world'")
+            with ctx_logger(baz="qux"):
+                logger.info("second log should have 'foo':'bar', 'baz':'qux' and 'hello':'world'")
+        ctx_logger.info("third log should have 'hello':'world'")
         stream_value = stream.getvalue()
-    first, second = [json.loads(line) for line in stream_value.splitlines()]
+    first, second, third = [json.loads(line) for line in stream_value.splitlines()]
     assert first == dict(foo='bar', hello='world')
-    assert second == dict(hello='world')
+    assert second == dict(foo='bar', hello='world', baz='qux')
+    assert third == dict(hello='world')
 
 
 def build_ctx_logger_with_stream(logger_name, stream, *, fmt: dict = None):
