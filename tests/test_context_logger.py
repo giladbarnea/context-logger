@@ -189,6 +189,33 @@ def test_start_scope_by_calling_logger_instance(current_test_name):
     assert third == dict(hello='world')
 
 
+def test_scope_decorator(current_test_name):
+    with io.StringIO() as stream:
+        ctx_logger = build_ctx_logger_with_stream(current_test_name, stream)
+        @ctx_logger.scope(foo="bar")
+        def first(logger):
+            logger.info("first log should have 'foo':'bar' and 'hello':'world'")
+            second()
+        @ctx_logger.scope(baz="qux")
+        def second(logger):
+            logger.update_extra(hello="world")
+            logger.info("second log should have 'foo':'bar', 'baz':'qux' and 'hello':'world'")
+            third()
+
+        @ctx_logger.scope(hello="earth")
+        def third(logger):
+            logger.info("third log should have 'foo':'bar', 'baz':'qux' and 'hello':'earth'")
+
+        first()
+        ctx_logger.info("fourth log should not have any extra")
+        stream_value = stream.getvalue()
+    first, second, third, fourth = [json.loads(line) for line in stream_value.splitlines()]
+    assert first == dict(foo='bar', )
+    assert second == dict(foo='bar' , baz='qux', hello='world')
+    assert third == dict(foo='bar' , baz='qux', hello='earth')
+    assert fourth == dict()
+
+
 def build_ctx_logger_with_stream(logger_name, stream, *, fmt: dict = None):
     wrapped_logger = logging.getLogger(logger_name)
     wrapped_logger.setLevel(logging.INFO)
