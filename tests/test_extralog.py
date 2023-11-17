@@ -192,10 +192,12 @@ def test_start_scope_by_calling_logger_instance(current_test_name):
 def test_scope_decorator(current_test_name):
     with io.StringIO() as stream:
         extralog = build_extralog_with_stream(current_test_name, stream)
+
         @extralog.scope(foo="bar")
         def first(logger):
             logger.info("first log should have 'foo':'bar' and 'hello':'world'")
             second()
+
         @extralog.scope(baz="qux")
         def second(logger):
             logger.update_extra(hello="world")
@@ -210,9 +212,9 @@ def test_scope_decorator(current_test_name):
         extralog.info("fourth log should not have any extra")
         stream_value = stream.getvalue()
     first, second, third, fourth = [json.loads(line) for line in stream_value.splitlines()]
-    assert first == dict(foo='bar', )
-    assert second == dict(foo='bar' , baz='qux', hello='world')
-    assert third == dict(foo='bar' , baz='qux', hello='earth')
+    assert first == dict(foo='bar')
+    assert second == dict(foo='bar', baz='qux', hello='world')
+    assert third == dict(foo='bar', baz='qux', hello='earth')
     assert fourth == dict()
 
 
