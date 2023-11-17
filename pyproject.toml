@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["'Gilad Barnea' <giladbrn@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "extralog", from = "." },
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
