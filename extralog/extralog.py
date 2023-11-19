@@ -41,12 +41,12 @@ class ExtraLog(logging.LoggerAdapter):
 
         return msg, {"extra": self.extra | new_extra, **log_function_kwargs}
 
-    def update_extra(self, **kwargs) -> Self:
+    def update(self, **kwargs) -> Self:
         """
         Persist `extra` across logging calls.
 
         >>> log = ExtraLog("example")
-        >>> log.update_extra(chat_id="...").info("hello")
+        >>> log.update(chat_id="...").info("hello")
         """
         if not self.extra:
             self.extra = kwargs
@@ -54,7 +54,7 @@ class ExtraLog(logging.LoggerAdapter):
             self.extra.update(kwargs)
         return self
 
-    def delete_extra(self, *keys) -> Self:
+    def delete(self, *keys) -> Self:
         for key in keys:
             self.extra.pop(key, None)
         return self
@@ -78,11 +78,11 @@ class ExtraLog(logging.LoggerAdapter):
         >>> something()
         { 'message': 'done', 'doing': 'something' }
         """
-        self.update_extra(**kwargs)
+        self.update(**kwargs)
         try:
             yield self
         finally:
-            self.delete_extra(*kwargs.keys())
+            self.delete(*kwargs.keys())
 
     def __call__(self, **kwargs):
         """

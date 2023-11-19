@@ -24,7 +24,7 @@ def test_update_extra_persists_across_multiple_calls(current_test_name):
         extralog = build_extralog_with_stream(current_test_name, stream)
         extralog.info("first log", extra=dict(log="first"))
         extralog.info("second log should not have any extra")
-        extralog.update_extra(updated="extra").info("third log should have 'updated':'extra'")
+        extralog.update(updated="extra").info("third log should have 'updated':'extra'")
         extralog.info("fourth log also should have 'updated':'extra'")
         extralog.info("fifth log should have 'updated':'extra' and 'log':'fifth'", extra=dict(log="fifth"))
         extralog.info("sixth log should only have 'updated':'extra'")
@@ -32,9 +32,9 @@ def test_update_extra_persists_across_multiple_calls(current_test_name):
             "seventh log should only have 'updated':'extra implicitly'", extra=dict(updated="extra implicitly")
         )
         extralog.info("eighth log should only have 'updated':'extra implicitly'")
-        extralog.update_extra(updated="extra explicitly", have='a cookie')
+        extralog.update(updated="extra explicitly", have='a cookie')
         extralog.info("ninth log should have 'updated':'extra explicitly' and 'have':'a cookie'")
-        extralog.update_extra(updated="extra last time", have='a mars bar').info(
+        extralog.update(updated="extra last time", have='a mars bar').info(
             "tenth log should have 'updated':'extra last time', 'have':'a mars bar' and 'test_is':'over'",
             extra=dict(test_is='over'),
         )
@@ -59,11 +59,11 @@ def test_update_extra_persists_across_multiple_calls(current_test_name):
 def test_delete_extra(current_test_name):
     with io.StringIO() as stream:
         extralog = build_extralog_with_stream(current_test_name, stream)
-        extralog.update_extra(foo="bar", baz="qux").info("first log should have 'foo':'bar' and 'baz':'qux'")
-        extralog.delete_extra("foo").info("second log should have 'baz':'qux'")
-        extralog.delete_extra("baz")
+        extralog.update(foo="bar", baz="qux").info("first log should have 'foo':'bar' and 'baz':'qux'")
+        extralog.delete("foo").info("second log should have 'baz':'qux'")
+        extralog.delete("baz")
         extralog.info("third log should not have any extra")
-        extralog.delete_extra("made up key, but that's fine")
+        extralog.delete("made up key, but that's fine")
         extralog.info("fourth log should not have any extra")
 
         stream_value = stream.getvalue()
@@ -80,15 +80,15 @@ def test_logs_extra_when_passed_as_kwarg(current_test_name):
         extralog = build_extralog_with_stream(current_test_name, stream)
         extralog.info("first log", log="first")
         extralog.info("second log should not have any extra")
-        extralog.update_extra(updated="extra").info("third log should have 'updated':'extra'")
+        extralog.update(updated="extra").info("third log should have 'updated':'extra'")
         extralog.info("fourth log also should have 'updated':'extra'")
         extralog.info("fifth log should have 'updated':'extra' and 'log':'fifth'", log="fifth")
         extralog.info("sixth log should only have 'updated':'extra'")
         extralog.info("seventh log should only have 'updated':'extra implicitly'", updated="extra implicitly")
         extralog.info("eighth log should only have 'updated':'extra implicitly'")
-        extralog.update_extra(updated="extra explicitly", have='a cookie')
+        extralog.update(updated="extra explicitly", have='a cookie')
         extralog.info("ninth log should have 'updated':'extra explicitly' and 'have':'a cookie'")
-        extralog.update_extra(updated="extra last time", have='a mars bar').info(
+        extralog.update(updated="extra last time", have='a mars bar').info(
             "tenth log should have 'updated':'extra last time', 'have':'a mars bar', 'test_is':'over' and 'good':'bye'",
             test_is='over',
             extra=dict(good='bye'),
@@ -119,7 +119,7 @@ def test_standard_log_function_kwargs_work(current_test_name):
         try:
             1 / 0
         except ZeroDivisionError:
-            extralog.update_extra(foo="bar").info(
+            extralog.update(foo="bar").info(
                 "", baz="qux", extra=dict(hi="bye"), exc_info=True, stack_info=True, stacklevel=4
             )
         stream_value = stream.getvalue()
@@ -135,7 +135,7 @@ def test_standard_log_function_kwargs_work(current_test_name):
 def test_scope(current_test_name):
     with io.StringIO() as stream:
         extralog = build_extralog_with_stream(current_test_name, stream)
-        extralog.update_extra(hello="world")
+        extralog.update(hello="world")
         with extralog.scope(foo="bar"):
             extralog.info("first log should have 'foo':'bar' and 'hello':'world'")
         extralog.info("second log should have 'hello':'world'")
@@ -150,13 +150,13 @@ def test_scope(current_test_name):
                     "sixth log should have 'first':'changed from inner', 'second':'changed' and 'hello':'world'",
                     first='changed from inner',
                 )
-                extralog.update_extra(should='persist outside of scope')
+                extralog.update(should='persist outside of scope')
             extralog.info(
                 "seventh log should have 'first':'changed from inner', 'hello':'world' and 'should':'persist outside of scope'"
             )
         extralog.info("eigth log should have 'hello':'world' and 'should':'persist outside of scope'")
         with extralog.scope(deleting="manually"):
-            extralog.delete_extra("deleting")
+            extralog.delete("deleting")
         extralog.info("ninth log should not have 'deleting':'manually'")
         stream_value = stream.getvalue()
     first, second, third, fourth, fifth, sixth, seventh, eigth, ninth = [
@@ -176,7 +176,7 @@ def test_scope(current_test_name):
 def test_start_scope_by_calling_logger_instance(current_test_name):
     with io.StringIO() as stream:
         extralog = build_extralog_with_stream(current_test_name, stream)
-        extralog.update_extra(hello="world")
+        extralog.update(hello="world")
         with extralog(foo="bar") as logger:
             logger.info("first log should have 'foo':'bar' and 'hello':'world'")
             with extralog(baz="qux"):
@@ -200,7 +200,7 @@ def test_scope_decorator(current_test_name):
 
         @extralog.scope(baz="qux")
         def second(logger):
-            logger.update_extra(hello="world")
+            logger.update(hello="world")
             logger.info("second log should have 'foo':'bar', 'baz':'qux' and 'hello':'world'")
             third()
 
